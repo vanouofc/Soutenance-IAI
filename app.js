@@ -25,7 +25,7 @@ if(!PORT){
     throw new Error("Veuillez renseigner le PORT dans le .env.");
 };
 
-const allowedOrigins = process.env.CORS_ORIGIN; console.log(allowedOrigins)
+const allowedOrigins = process.env.CORS_ORIGIN;
 app.use(cors({
     origin: allowedOrigins,
     credentials: true,
@@ -35,10 +35,10 @@ app.use(arcjectMiddleware);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const swaggerDocument = JSON.parse(readFileSync(new URL("./swagger-output.json", import.meta.url)));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/photos', photoRouter);
 app.use('/buy-it', paiementRouter);
 app.use('/utilisateurs', utilisateurRouter);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get('/', (req, res) => {
     console.log(`http://127.0.0.1:${PORT}/`);
     res.send(`Serveur sur écoute.`);
