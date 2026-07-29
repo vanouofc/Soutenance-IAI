@@ -21,7 +21,7 @@ const paiementSchema = new mongoose.Schema(
       type: String,
       trim: true,
       enum: {
-        values: [ "Génie logiciel", "Sytème et réseau", "Software engineering" ],
+        values: [ "Génie logiciel", "Système et réseau", "Software engineering" ],
         message: "filière invalide.",
       },
     },
