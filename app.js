@@ -25,7 +25,7 @@ if(!PORT){
     throw new Error("Veuillez renseigner le PORT dans le .env.");
 };
 
-const allowedOrigins = process.env.CORS_ORIGIN;
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [];
 app.use(cors({
     origin: allowedOrigins,
     credentials: true,
@@ -41,7 +41,7 @@ app.use('/buy-it', paiementRouter);
 app.use('/utilisateurs', utilisateurRouter);
 app.get('/', (req, res) => {
     console.log(`http://127.0.0.1:${PORT}/`);
-    res.send(`Serveur sur écoute.`);
+    res.send();
 });
 
 app.use(errorMiddleware);
