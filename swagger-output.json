@@ -1,0 +1,578 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Soutenances IAI",
+    "description": "API de collecte des frais de soutenance - Institut Africain d'Informatique",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Utilisateurs",
+      "description": "Gestion des administrateurs"
+    },
+    {
+      "name": "Paiements",
+      "description": "Gestion des paiements Mobile Money"
+    },
+    {
+      "name": "Photos",
+      "description": "Upload de photos"
+    }
+  ],
+  "paths": {
+    "/photos/upload": {
+      "post": {
+        "tags": [
+          "Photos"
+        ],
+        "summary": "Uploader une photo",
+        "description": "Télécharge une photo (jpeg, jpg, png, webp - max 5 Mo). Authentification requise.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "photo",
+            "in": "formData",
+            "required": true,
+            "description": "Fichier image (jpeg, jpg, png, webp) - max 5 Mo",
+            "schema": {
+              "type": "file"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Photo téléchargée avec succès"
+          },
+          "400": {
+            "description": "Aucune photo ou format invalide"
+          },
+          "500": {
+            "description": "Erreur lors du téléchargement"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/buy-it/": {
+      "post": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Effectuer un paiement Mobile Money",
+        "description": "Initie un paiement Mobile Money via Orange ou MTN et envoie un email de confirmation.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Données du paiement",
+            "schema": {
+              "$ref": "#/components/schemas/Paiement"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paiement réussi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paiement"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Paiement"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Champs manquants"
+          },
+          "402": {
+            "description": "Échec du paiement"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nom": {
+                    "example": "any"
+                  },
+                  "email": {
+                    "example": "any"
+                  },
+                  "filiere": {
+                    "example": "any"
+                  },
+                  "niveau": {
+                    "example": "any"
+                  },
+                  "classe": {
+                    "example": "any"
+                  },
+                  "matricule": {
+                    "example": "any"
+                  },
+                  "numero": {
+                    "example": "any"
+                  },
+                  "operateur": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Lister tous les paiements",
+        "description": "Retourne la liste des paiements avec pagination. Authentification requise.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des paiements"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/buy-it/{id}": {
+      "get": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Obtenir un paiement par ID",
+        "description": "Retourne les détails d\\'un paiement spécifique.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID MongoDB du paiement"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paiement trouvé"
+          },
+          "404": {
+            "description": "Paiement introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Supprimer un paiement (soft delete)",
+        "description": "Marque un paiement comme supprimé (isActive: false) sans l\\'effacer de la base.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID MongoDB du paiement"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paiement supprimé"
+          },
+          "404": {
+            "description": "Paiement introuvable"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/buy-it/search/{field}": {
+      "get": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Rechercher des paiements par champ",
+        "description": "Recherche des paiements par nom, matricule, classe, filière ou niveau (insensible à la casse).",
+        "parameters": [
+          {
+            "name": "field",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Champ de recherche (nom, matricule, classe, filiere, niveau)"
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "description": "Valeur à rechercher",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultats de la recherche"
+          },
+          "400": {
+            "description": "Champ de recherche invalide"
+          },
+          "404": {
+            "description": "Aucun paiement trouvé"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/utilisateurs/": {
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Créer un compte administrateur",
+        "description": "Inscrit un nouvel utilisateur avec nom, email, mot de passe et téléphone.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Données utilisateur",
+            "schema": {
+              "$ref": "#/components/schemas/Utilisateur"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Utilisateur créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Utilisateur"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Utilisateur"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Champs manquants"
+          },
+          "409": {
+            "description": "Cet utilisateur existe déjà."
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nom": {
+                    "example": "any"
+                  },
+                  "email": {
+                    "example": "any"
+                  },
+                  "password": {
+                    "example": "any"
+                  },
+                  "phone": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/utilisateurs/signin": {
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Connecter un administrateur",
+        "description": "Authentifie un utilisateur avec email et mot de passe.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Identifiants de connexion",
+            "schema": {
+              "$ref": "#/components/schemas/SignInBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Authentification réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Utilisateur"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Utilisateur"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Mot de passe incorrect"
+          },
+          "404": {
+            "description": "Utilisateur introuvable"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "example": "any"
+                  },
+                  "password": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/utilisateurs/signout": {
+      "post": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Déconnecter un administrateur",
+        "description": "Déconnecte l\\'utilisateur (le token est géré côté client).",
+        "responses": {
+          "200": {
+            "description": "Déconnexion réussie"
+          }
+        }
+      }
+    },
+    "/utilisateurs/get-session": {
+      "get": {
+        "tags": [
+          "Utilisateurs"
+        ],
+        "summary": "Vérifier une session utilisateur",
+        "description": "Vérifie la validité du token JWT et retourne les informations de session.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session active"
+          },
+          "401": {
+            "description": "Token manquant, invalide ou expiré"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Utilisateur": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "example": "TINGUEU Shivano"
+          },
+          "email": {
+            "type": "string",
+            "example": "tingueushivano@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "123456"
+          },
+          "phone": {
+            "type": "string",
+            "example": "6xxxxxxxx"
+          }
+        },
+        "xml": {
+          "name": "Utilisateur"
+        }
+      },
+      "Paiement": {
+        "type": "object",
+        "properties": {
+          "nom": {
+            "type": "string",
+            "example": "TINGUEU Shivano"
+          },
+          "email": {
+            "type": "string",
+            "example": "tingueushivano@example.com"
+          },
+          "filiere": {
+            "type": "string",
+            "example": "Génie logiciel"
+          },
+          "niveau": {
+            "type": "string",
+            "example": "3"
+          },
+          "classe": {
+            "type": "string",
+            "example": "GL3A"
+          },
+          "matricule": {
+            "type": "string",
+            "example": "IAI-2025-001"
+          },
+          "numero": {
+            "type": "string",
+            "example": "6xxxxxxxx"
+          },
+          "operateur": {
+            "type": "string",
+            "example": "ORANGE"
+          }
+        },
+        "xml": {
+          "name": "Paiement"
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Entrez votre token JWT (ex: Bearer <token>)"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}
