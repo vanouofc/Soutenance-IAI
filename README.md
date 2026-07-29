@@ -120,4 +120,4 @@ L'API est accessible sur `http://localhost:3000`. La documentation Swagger est d
 
 ## Auteur
 
-Projet développé pour l'IAI – Centre d'Excellence Technologique Paul Biya.
+Projet développé par TINGUEU NGUIFO Shivano pour l'IAI Cameroun – Centre d'Excellence Technologique Paul Biya.
