@@ -33,7 +33,7 @@ app.use(cors({
     credentials: true,
 }));
 
-// app.use(arcjectMiddleware);
+app.use(arcjectMiddleware);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const swaggerDocument = JSON.parse(readFileSync(new URL("./swagger-output.json", import.meta.url)));
