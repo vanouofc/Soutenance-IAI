@@ -104,7 +104,10 @@ export const getPayDataService = async (token) => {
     }
 
     const paiementToken = decodedToken;
-    const id = paiementToken.transacId;
+    const id = paiementToken.IdTransaction;
+    if (!id) {
+      throw new ErreurMetier("Token invalide", 401);
+    }
 
     // Récupérer le depuis la base de données
     const paiement = await Paiement.findOne({idTransaction: id}).lean(); // Retourner un objet simple
@@ -154,6 +157,10 @@ export const getPaiementsByFieldService = async (field, value, page = 1, limit =
         throw new ErreurMetier("La valeur de recherche est requise", 400);
       };
 
+      if (String(value).length > 200) {
+        throw new ErreurMetier("La valeur de recherche est trop longue (200 caractères max).", 400);
+      };
+
       const skip = (page - 1) * limit;
       // "niveau" est stocké en Number dans la base : on ne peut pas utiliser
       // $regex (réservé aux chaînes). On recherche donc par égalité numérique.
@@ -165,7 +172,11 @@ export const getPaiementsByFieldService = async (field, value, page = 1, limit =
         };
         filtre = { [field]: niveau };
       } else {
-        filtre = { [field]: { $regex: String(value), $options: "i" } };
+        // Échappe les métacaractères d'expression régulière : la valeur est
+        // recherchée en tant que texte LITTÉRAL, ce qui neutralise le ReDoS
+        // (backtracking catastrophique via "(a+)+$" ou équivalent).
+        const valeurLitterale = String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        filtre = { [field]: { $regex: valeurLitterale, $options: "i" } };
       }
       const total = await Paiement.countDocuments(filtre);
       const paiements = await Paiement.find(filtre).skip(skip).limit(limit);

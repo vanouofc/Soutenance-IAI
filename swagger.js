@@ -9,13 +9,12 @@ const doc = {
   schemes: ['http'],
   securityDefinitions: {
     bearerAuth: {
-      type: 'apiKey',
-      in: 'header',
-      name: 'Authorization',
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
       description: 'Entrez votre token JWT (ex: Bearer <token>)',
     },
   },
-  security: [{ bearerAuth: [] }],
   definitions: {
     Utilisateur: {
       nom: 'TINGUEU Shivano',
@@ -23,11 +22,15 @@ const doc = {
       password: '123456',
       phone: '6xxxxxxxx',
     },
+    SignInBody: {
+      email: 'tingueushivano@example.com',
+      password: '123456',
+    },
     Paiement: {
       nom: 'TINGUEU Shivano',
       email: 'tingueushivano@example.com',
       filiere: 'Génie logiciel',
-      niveau: '3',
+      niveau: 3,
       classe: 'GL3A',
       matricule: 'IAI-2025-001',
       numero: '6xxxxxxxx',

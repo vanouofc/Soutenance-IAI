@@ -26,14 +26,14 @@ if(!PORT){
 };
 
 const allowedOrigins = process.env.CORS_ORIGIN/*?.split(',') || [];*/ 
-console.log(allowedOrigins)
+
 app.use(cors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
 }));
 
-// app.use(arcjectMiddleware);
+app.use(arcjectMiddleware);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const swaggerDocument = JSON.parse(readFileSync(new URL("./swagger-output.json", import.meta.url)));

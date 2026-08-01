@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -30,10 +31,35 @@ export const escapeHtml = (value) =>
 
 // Logo embarqué en attachement "inline" : référencé via `cid:` dans le HTML,
 // il s'affiche directement dans l'email (sans dépendre d'un hébergement externe).
+// Le contenu est fourni en Buffer car Resend n'accepte pas de chemin local.
+// Le type réel est détecté depuis les octets (le nom du fichier ne suffit pas).
+const LOGO_FILE_PATH = path.join(__dirname, "assets/logo-iai.png");
+const LOGO_BUFFER = fs.readFileSync(LOGO_FILE_PATH);
+
+const detecterImage = (buffer) => {
+  if (
+    buffer.length >= 3 &&
+    buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff
+  ) return { ext: "jpg", mime: "image/jpeg" };
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 && buffer[1] === 0x50 &&
+    buffer[2] === 0x4e && buffer[3] === 0x47
+  ) return { ext: "png", mime: "image/png" };
+  if (
+    buffer.length >= 12 &&
+    buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+    buffer.subarray(8, 12).toString("ascii") === "WEBP"
+  ) return { ext: "webp", mime: "image/webp" };
+  return { ext: "png", mime: "image/png" };
+};
+
+const { ext, mime } = detecterImage(LOGO_BUFFER);
+
 const LOGO_ATTACHMENT = {
-  filename: "logo-iai.png",
-  path: path.join(__dirname, "assets/logo-iai.png"),
-  contentType: "image/png",
+  filename: `logo-iai.${ext}`,
+  content: LOGO_BUFFER,
+  contentType: mime,
   contentId: "logo-iai",
 };
 

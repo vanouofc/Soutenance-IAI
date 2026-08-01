@@ -28,7 +28,7 @@ export const uploadPhoto = async (req, res, next) => {
 
         // ----- 5. Données du candidat issues du token de paiement -----
         // verifierPaiementToken a posé le payload décodé dans req.user :
-        // { nom, email, filiere, niveau, classe, matricule, montant, transacId }
+        // { nom, email, filiere, niveau, classe, matricule, montantR, IdTransaction }
         const paiement = req.user;
         if (!paiement?.filiere || !paiement?.niveau || !paiement?.nom) {
             return res.status(400).json({

@@ -10,7 +10,8 @@ paiementRouter.post('/',
     /* #swagger.tags = ['Paiements'] */ 
     /* #swagger.summary = 'Effectuer un paiement Mobile Money' */ 
     /* #swagger.description = 'Initie un paiement Mobile Money via Orange ou MTN et envoie un email de confirmation.' */ 
-    /* #swagger.parameters['body'] = { in: 'body', description: 'Données du paiement', schema: { $ref: '#/definitions/Paiement' } } */ /* #swagger.responses[200] = { description: 'Paiement réussi', schema: { $ref: '#/definitions/Paiement' } } */ 
+    /* #swagger.requestBody = { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/Paiement' } } } } */ 
+    /* #swagger.responses[200] = { description: 'Paiement réussi', schema: { $ref: '#/components/schemas/Paiement' } } */ 
     /* #swagger.responses[400] = { description: 'Champs manquants' } */ 
     /* #swagger.responses[402] = { description: 'Échec du paiement' } */ 
     paiementFrais
@@ -23,9 +24,8 @@ paiementRouter.post('/add',
     /* #swagger.summary = 'Ajouter un paiement' */ 
     /* #swagger.description = 'Ajouter un paiement manuellement dans la base de données.' */ 
     /* #swagger.security = [{ "bearerAuth": [] }] */ 
-    /* #swagger.parameters['id'] = { in: 'path', description: 'ID MongoDB du paiement', required: true, type: 'string' } */ 
-    /* #swagger.responses[200] = { description: 'Paiement supprimé' } */ 
-    /* #swagger.responses[404] = { description: 'Paiement introuvable' } */
+    /* #swagger.requestBody = { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/Paiement' } } } } */ 
+    /* #swagger.responses[201] = { description: 'Paiement enregistré manuellement' } */
     addPaiement
 );
 
@@ -39,13 +39,21 @@ paiementRouter.get('/',
     getPaiments
 );
 
-paiementRouter.get('/get-paydata', verifierPaiementToken, getPayData);
+paiementRouter.get('/get-paydata', 
+    verifierPaiementToken, 
+    /* #swagger.tags = ['Paiements'] */ 
+    /* #swagger.summary = 'Récupérer les données du paiement' */ 
+    /* #swagger.description = 'Retourne les données du paiement (nom, email, filière, classe) associées au token de paiement fourni.' */ 
+    /* #swagger.security = [{ "bearerAuth": [] }] */ 
+    /* #swagger.responses[200] = { description: 'Données du paiement' } */ 
+    /* #swagger.responses[401] = { description: 'Token invalide ou expiré' } */ 
+    getPayData);
 
 paiementRouter.get('/:id', 
     requireAuth, 
     /* #swagger.tags = ['Paiements'] */ 
     /* #swagger.summary = 'Obtenir un paiement par ID' */ 
-    /* #swagger.description = 'Retourne les détails d\'un paiement spécifique.' */ 
+    /* #swagger.description = "Retourne les détails d'un paiement spécifique." */ 
     /* #swagger.security = [{ "bearerAuth": [] }] */ 
     /* #swagger.parameters['id'] = { in: 'path', description: 'ID MongoDB du paiement', required: true, type: 'string' } */ 
     /* #swagger.responses[200] = { description: 'Paiement trouvé' } */ 
@@ -58,7 +66,7 @@ paiementRouter.delete('/:id',
     isAdmin,
     /* #swagger.tags = ['Paiements'] */ 
     /* #swagger.summary = 'Supprimer un paiement (soft delete)' */ 
-    /* #swagger.description = 'Marque un paiement comme supprimé (isActive: false) sans l\'effacer de la base.' */ 
+    /* #swagger.description = "Marque un paiement comme supprimé (isActive: false) sans l'effacer de la base." */ 
     /* #swagger.security = [{ "bearerAuth": [] }] */ 
     /* #swagger.parameters['id'] = { in: 'path', description: 'ID MongoDB du paiement', required: true, type: 'string' } */ 
     /* #swagger.responses[200] = { description: 'Paiement supprimé' } */ 

@@ -10,6 +10,24 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// Construit une version "publique" d'un utilisateur : ne contient JAMAIS le
+// hash du mot de passe ni les champs internes de Mongoose (__v, _doc, ...).
+// Utilisée pour le payload du JWT et pour les réponses API.
+const publierUtilisateur = (utilisateur) => {
+    const d = utilisateur?._doc ?? utilisateur ?? {};
+    return {
+        nom: d.nom,
+        email: d.email,
+        phone: d.phone,
+        role: d.role,
+    };
+};
+
+// Hash de comparaison utilisé quand l'email n'existe pas : on exécute quand
+// même bcrypt.compare pour que le temps de réponse ne révèle pas l'existence
+// du compte (énumération par timing).
+const HASH_FICTIF = bcrypt.hashSync("mot-de-passe-fictif", 10);
+
 
 export const createUtilisateurService = async (utilisateurData) => {
     const session = await mongoose.startSession();
@@ -32,13 +50,14 @@ export const createUtilisateurService = async (utilisateurData) => {
             phone
         });
         const utilisateur = await newUtilisateur.save({session});
+        const utilisateurPublic = publierUtilisateur(utilisateur);
 
-        const token = await generateToken({newUtilisateur});
+        const token = await generateToken({utilisateur: utilisateurPublic});
 
         await session.commitTransaction();
         await session.endSession();
 
-        return {utilisateur, token};
+        return {utilisateur: utilisateurPublic, token};
     } catch (error) {
         await session.abortTransaction();
         await session.endSession();
@@ -51,18 +70,25 @@ export const utilisateurSignInService = async (utilisateurData) => {
         const {email, password} = utilisateurData;
 
         const utilisateur = await Utilisateur.findOne({email});
-        if(!utilisateur){
-            throw new ErreurMetier('Utilisateur introuvable.', 404);
+
+        // Même réponse (message générique 401) et même coût de calcul que
+        // l'email existe ou non → impossible de deviner les comptes par le
+        // message d'erreur ou par le temps de réponse.
+        let motDePasseValide = false;
+        if (utilisateur) {
+            motDePasseValide = await bcrypt.compare(password, utilisateur.password);
+        } else {
+            await bcrypt.compare(password, HASH_FICTIF);
+        }
+
+        if (!utilisateur || !motDePasseValide) {
+            throw new ErreurMetier('Email ou mot de passe incorrect.', 401);
         };
 
-        const correctPassword = await bcrypt.compare(password, utilisateur.password);
-        if(!correctPassword){
-            throw new ErreurMetier('Mot de passe incorrect.', 400);
-        };
+        const utilisateurPublic = publierUtilisateur(utilisateur);
+        const token = await generateToken({utilisateur: utilisateurPublic});
 
-        const token = await generateToken({utilisateur});
-
-        return {utilisateur, token};
+        return {utilisateur: utilisateurPublic, token};
     } catch (error) {
         throw error;
     }

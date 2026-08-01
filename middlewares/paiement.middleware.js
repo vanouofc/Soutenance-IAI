@@ -59,12 +59,14 @@ export const verifierPaiementToken = async (req, res, next) => {
         req.paiementExpiresAt = session.expiresAt;
         req.paiementIssuedAt = session.issuedAt;
 
-        // 4. Ajouter également le token décodé (pour compatibilité)
+        // 4. Ajouter également le token décodé (le service a déjà vérifié la signature)
         try {
             req.user = jwt.verify(token, JWT_SECRET);
         } catch (error) {
-            // Si le token est déjà vérifié par le service, on peut le décoder sans vérifier
-            req.user = jwt.decode(token);
+            return res.status(401).json({
+                success: false,
+                message: "Token invalide"
+            });
         }
 
         next();

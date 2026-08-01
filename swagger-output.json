@@ -25,13 +25,23 @@
     }
   ],
   "paths": {
+    "/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/photos/upload": {
       "post": {
         "tags": [
           "Photos"
         ],
-        "summary": "Uploader une photo",
-        "description": "Télécharge une photo (jpeg, jpg, png, webp - max 5 Mo). Authentification requise.",
+        "summary": "Uploader une photo et générer la carte de soutenance",
+        "description": "Télécharge une photo (jpeg, jpg, png, webp - max 5 Mo) et les métadonnées de la soutenance, puis génère la carte (PDF rempli converti en PNG) selon la filière et le niveau du token de paiement.",
         "parameters": [
           {
             "name": "authorization",
@@ -39,23 +49,20 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "photo",
-            "in": "formData",
-            "required": true,
-            "description": "Fichier image (jpeg, jpg, png, webp) - max 5 Mo",
-            "schema": {
-              "type": "file"
-            }
           }
         ],
         "responses": {
           "201": {
-            "description": "Photo téléchargée avec succès"
+            "description": "Carte générée (apercu base64 + url)"
           },
           "400": {
-            "description": "Aucune photo ou format invalide"
+            "description": "Photo manquante, format invalide ou champs manquants"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Aucun modèle de carte pour cette filière/niveau"
           },
           "500": {
             "description": "Erreur lors du téléchargement"
@@ -65,7 +72,57 @@
           {
             "bearerAuth": []
           }
-        ]
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo",
+                  "theme",
+                  "jour",
+                  "heure",
+                  "salle",
+                  "encadreurAcademique",
+                  "encadreurProfessionnel"
+                ],
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Fichier image (jpeg, jpg, png, webp) - max 5 Mo"
+                  },
+                  "theme": {
+                    "type": "string",
+                    "description": "Thème de la soutenance"
+                  },
+                  "jour": {
+                    "type": "string",
+                    "description": "Date de la soutenance (ex: 12/08/2026)"
+                  },
+                  "heure": {
+                    "type": "string",
+                    "description": "Heure de la soutenance (ex: 10h30)"
+                  },
+                  "salle": {
+                    "type": "string",
+                    "description": "Salle où se déroule la soutenance"
+                  },
+                  "encadreurAcademique": {
+                    "type": "string",
+                    "description": "Encadreur academique"
+                  },
+                  "encadreurProfessionnel": {
+                    "type": "string",
+                    "description": "Encadreur professionnel"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/buy-it/": {
@@ -75,16 +132,6 @@
         ],
         "summary": "Effectuer un paiement Mobile Money",
         "description": "Initie un paiement Mobile Money via Orange ou MTN et envoie un email de confirmation.",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "description": "Données du paiement",
-            "schema": {
-              "$ref": "#/components/schemas/Paiement"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Paiement réussi",
@@ -109,36 +156,11 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "nom": {
-                    "example": "any"
-                  },
-                  "email": {
-                    "example": "any"
-                  },
-                  "filiere": {
-                    "example": "any"
-                  },
-                  "niveau": {
-                    "example": "any"
-                  },
-                  "classe": {
-                    "example": "any"
-                  },
-                  "matricule": {
-                    "example": "any"
-                  },
-                  "numero": {
-                    "example": "any"
-                  },
-                  "operateur": {
-                    "example": "any"
-                  }
-                }
+                "$ref": "#/components/schemas/Paiement"
               }
             }
           }
@@ -185,13 +207,103 @@
         ]
       }
     },
+    "/buy-it/add": {
+      "post": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Ajouter un paiement",
+        "description": "Ajouter un paiement manuellement dans la base de données.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Paiement enregistré manuellement"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "402": {
+            "description": "Payment Required"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Paiement"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/buy-it/get-paydata": {
+      "get": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Récupérer les données du paiement",
+        "description": "Retourne les données du paiement (nom, email, filière, classe) associées au token de paiement fourni.",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Données du paiement"
+          },
+          "401": {
+            "description": "Token invalide ou expiré"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/buy-it/{id}": {
       "get": {
         "tags": [
           "Paiements"
         ],
         "summary": "Obtenir un paiement par ID",
-        "description": "Retourne les détails d\\'un paiement spécifique.",
+        "description": "Retourne les détails d'un paiement spécifique.",
         "parameters": [
           {
             "name": "id",
@@ -229,7 +341,7 @@
           "Paiements"
         ],
         "summary": "Supprimer un paiement (soft delete)",
-        "description": "Marque un paiement comme supprimé (isActive: false) sans l\\'effacer de la base.",
+        "description": "Marque un paiement comme supprimé (isActive: false) sans l'effacer de la base.",
         "parameters": [
           {
             "name": "id",
@@ -251,6 +363,12 @@
         "responses": {
           "200": {
             "description": "Paiement supprimé"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           },
           "404": {
             "description": "Paiement introuvable"
@@ -338,11 +456,10 @@
         "description": "Inscrit un nouvel utilisateur avec nom, email, mot de passe et téléphone.",
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "description": "Données utilisateur",
+            "name": "authorization",
+            "in": "header",
             "schema": {
-              "$ref": "#/components/schemas/Utilisateur"
+              "type": "string"
             }
           }
         ],
@@ -369,25 +486,17 @@
             "description": "Cet utilisateur existe déjà."
           }
         },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "nom": {
-                    "example": "any"
-                  },
-                  "email": {
-                    "example": "any"
-                  },
-                  "password": {
-                    "example": "any"
-                  },
-                  "phone": {
-                    "example": "any"
-                  }
-                }
+                "$ref": "#/components/schemas/Utilisateur"
               }
             }
           }
@@ -401,16 +510,6 @@
         ],
         "summary": "Connecter un administrateur",
         "description": "Authentifie un utilisateur avec email et mot de passe.",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "description": "Identifiants de connexion",
-            "schema": {
-              "$ref": "#/components/schemas/SignInBody"
-            }
-          }
-        ],
         "responses": {
           "201": {
             "description": "Authentification réussie",
@@ -435,18 +534,11 @@
           }
         },
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "example": "any"
-                  },
-                  "password": {
-                    "example": "any"
-                  }
-                }
+                "$ref": "#/components/schemas/SignInBody"
               }
             }
           }
@@ -459,7 +551,7 @@
           "Utilisateurs"
         ],
         "summary": "Déconnecter un administrateur",
-        "description": "Déconnecte l\\'utilisateur (le token est géré côté client).",
+        "description": "Déconnecte l'utilisateur (le token est géré côté client).",
         "responses": {
           "200": {
             "description": "Déconnexion réussie"
@@ -490,7 +582,12 @@
           "401": {
             "description": "Token manquant, invalide ou expiré"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -520,6 +617,22 @@
           "name": "Utilisateur"
         }
       },
+      "SignInBody": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "tingueushivano@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "xml": {
+          "name": "SignInBody"
+        }
+      },
       "Paiement": {
         "type": "object",
         "properties": {
@@ -536,8 +649,8 @@
             "example": "Génie logiciel"
           },
           "niveau": {
-            "type": "string",
-            "example": "3"
+            "type": "number",
+            "example": 3
           },
           "classe": {
             "type": "string",
@@ -563,16 +676,11 @@
     },
     "securitySchemes": {
       "bearerAuth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "Authorization",
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
         "description": "Entrez votre token JWT (ex: Bearer <token>)"
       }
     }
-  },
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ]
+  }
 }

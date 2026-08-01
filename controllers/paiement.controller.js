@@ -73,7 +73,6 @@ export const addPaiement = async (req, res, next) => {
   try {
     const { nom, email, filiere, niveau, classe, matricule, numero } = req.body;
     const addedBy = req.user?.nom;
-    console.log(addedBy);
 
     if(!nom || !email || !niveau || !classe || !matricule || !numero) {
     return res.status(400).json({
@@ -97,7 +96,7 @@ export const addPaiement = async (req, res, next) => {
   await sendEmail({
     to: email,
     subject: 'Frais de soutenance IAI Cameroun',
-    html: confirmationEmail({nom, filiere, niveau, classe, matricule, montantR: montant, IdTransaction: transactionId}),
+    html: confirmationEmail({nom, filiere, niveau, classe, matricule, montant: montant, transaction: transactionId}),
   });
 
   return res.status(200).json({
