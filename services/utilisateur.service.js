@@ -16,6 +16,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const publierUtilisateur = (utilisateur) => {
     const d = utilisateur?._doc ?? utilisateur ?? {};
     return {
+        _id: d._id,
         nom: d.nom,
         email: d.email,
         phone: d.phone,
