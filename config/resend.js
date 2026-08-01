@@ -29,7 +29,7 @@ export async function sendEmail({to, subject, html}) {
   // console.log("Email envoyé : ", data);
 }
 
-export function confirmationEmail ({nom, classe, matricule, filiere, transactionId, montant}) {
+export function confirmationEmail ({nom, classe, matricule, filiere, transacId, montant}) {
   return `
     <!DOCTYPE html>
     <html lang="fr">
@@ -309,7 +309,7 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transaction
                 </p>
 
                 <p>
-                    Nous avons le plaisir de vous informer que votre paiement relatif aux
+                    Nous avons le plaisir de vous informer que le paiement relatif à vos
                     <strong>frais de soutenance</strong> a été reçu et enregistré avec succès.
                 </p>
 
@@ -337,7 +337,7 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transaction
 
                     <tr>
                         <td>Numéro de transaction</td>
-                        <td>${transactionId}</td>
+                        <td>${transacId}</td>
                     </tr>
 
                     <tr>
@@ -352,7 +352,7 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transaction
                     <strong>Information importante</strong>
 
                     <p>
-                        Cet constitue une confirmation officielle de
+                        Cet email constitue une confirmation officielle de
                         votre paiement. Nous vous recommandons de le conserver, car il
                         pourra vous être demandé lors des différentes étapes administratives
                         liées à votre soutenance.
@@ -424,4 +424,35 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transaction
 
     </html> 
 `;
+};
+
+export function activationEmail ({email, nom}) {
+    return `
+        <p>Bonjour <strong>Admin</strong>,</p>
+
+        <p>
+            Un nouvel administrateur a été ajouté sur <strong>Synergy-Pay</strong> et attend votre validation.
+        </p>
+
+        <p>
+            Merci de vérifier et de confirmer l'autorisation du compte ayant les coordonnées suivantes :
+        </p>
+
+        <p style="font-size:16px; font-weight:bold; color:#333;">
+            email : ${email}
+        </p>
+        <p style="font-size:16px; font-weight:bold; color:#333;">
+            nom : ${nom}
+        </p>
+
+        <p>
+            Si vous n'êtes pas à l'origine de cette demande ou si vous pensez qu'il s'agit d'une erreur,
+            veuillez ne pas valider ce compte..
+        </p>
+
+        <p>
+            Cordialement,<br>
+            <strong>L'équipe Synergy Pay</strong>
+        </p>
+    `;
 };

@@ -31,9 +31,14 @@ const paiementSchema = new mongoose.Schema(
       required: [true, "La classe du payeur est requis."],
     },
     niveau: {
-      type: String,
+      type: Number,
       trim: true,
       required: [true, "Le niveau du payeur est requis."],
+    },
+    montant: {
+      type: Number,
+      trim: true,
+      required: [true, "Le montant payer est requis."],
     },
     methode: {
         type: String,
@@ -52,10 +57,7 @@ const paiementSchema = new mongoose.Schema(
     operateur: {
       type: String,
       trim: true,
-      enum: {
-        values: [ "ORANGE", "MTN" ],
-        message: "Opérateur invalide.",
-      },
+      required: [true, "L'opérateur de paiement est requis."],
     },
     idTransaction: {
       type: String,

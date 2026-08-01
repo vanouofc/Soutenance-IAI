@@ -1,4 +1,13 @@
+import dotenv from "dotenv";
+import { activationEmail, sendEmail } from "../config/resend.js";
 import { createUtilisateurService, getSessionService, utilisateurSignInService } from "../services/utilisateur.service.js";
+
+dotenv.config();
+
+const ADMIN_CONTACT = process.env.ADMIN_CONTACT;
+if(!ADMIN_CONTACT) {
+    throw new Error("Renseigner le contact de l'Admin.");
+};
 
 
 export const createUtilisateur = async (req, res, next) => {
@@ -18,6 +27,12 @@ export const createUtilisateur = async (req, res, next) => {
                 message: "L'utilisateur n'a pas pu etre creer."
             });
         };
+
+        await sendEmail({
+            to: process.env.ADMIN_CONTACT,
+            subject: 'Valider un nouvel administrateur',
+            html: activationEmail({nom, email}),
+        });
 
         const {utilisateur, token} = register;
         

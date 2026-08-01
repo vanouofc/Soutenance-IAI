@@ -1,6 +1,8 @@
 import { Router } from "express";
-import { deletePaiement, getPaiement, getPaiementsByField, getPaiments, paiementFrais } from "../controllers/paiement.controller.js";
+import { addPaiement, deletePaiement, getPaiement, getPaiementsByField, getPaiments, getPayData, paiementFrais } from "../controllers/paiement.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
+import { isAdmin } from "../middlewares/isAdmin.middleware.js";
+import { verifierPaiementToken } from "../middlewares/paiement.middleware.js";
 
 const paiementRouter = Router();
 
@@ -14,8 +16,21 @@ paiementRouter.post('/',
     paiementFrais
 );
 
-paiementRouter.get('/', 
+paiementRouter.post('/add', 
     requireAuth, 
+    isAdmin, 
+    /* #swagger.tags = ['Paiements'] */ 
+    /* #swagger.summary = 'Ajouter un paiement' */ 
+    /* #swagger.description = 'Ajouter un paiement manuellement dans la base de données.' */ 
+    /* #swagger.security = [{ "bearerAuth": [] }] */ 
+    /* #swagger.parameters['id'] = { in: 'path', description: 'ID MongoDB du paiement', required: true, type: 'string' } */ 
+    /* #swagger.responses[200] = { description: 'Paiement supprimé' } */ 
+    /* #swagger.responses[404] = { description: 'Paiement introuvable' } */
+    addPaiement
+);
+
+paiementRouter.get('/', 
+    requireAuth,
     /* #swagger.tags = ['Paiements'] */ 
     /* #swagger.summary = 'Lister tous les paiements' */ 
     /* #swagger.description = 'Retourne la liste des paiements avec pagination. Authentification requise.' */ 
@@ -23,6 +38,8 @@ paiementRouter.get('/',
     /* #swagger.responses[200] = { description: 'Liste des paiements' } */ 
     getPaiments
 );
+
+paiementRouter.get('/get-paydata', verifierPaiementToken, getPayData);
 
 paiementRouter.get('/:id', 
     requireAuth, 
@@ -33,10 +50,12 @@ paiementRouter.get('/:id',
     /* #swagger.parameters['id'] = { in: 'path', description: 'ID MongoDB du paiement', required: true, type: 'string' } */ 
     /* #swagger.responses[200] = { description: 'Paiement trouvé' } */ 
     /* #swagger.responses[404] = { description: 'Paiement introuvable' } */ 
-    getPaiement);
+    getPaiement
+);
 
 paiementRouter.delete('/:id', 
     requireAuth, 
+    isAdmin,
     /* #swagger.tags = ['Paiements'] */ 
     /* #swagger.summary = 'Supprimer un paiement (soft delete)' */ 
     /* #swagger.description = 'Marque un paiement comme supprimé (isActive: false) sans l\'effacer de la base.' */ 

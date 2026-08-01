@@ -16,7 +16,7 @@ export const requireAuth = async (req, res, next) => {
         
         // Attacher la session à la requête
         req.session = session;
-        req.utilisateur = session.utilisateur;
+        req.user = session.user;
         
         next();
     } catch (error) {

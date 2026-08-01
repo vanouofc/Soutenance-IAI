@@ -99,15 +99,15 @@ export const getSessionService = async (token) => {
 
         // Construire la session
         const session = {
-            utilisateur: {
+            user: {
                 id: utilisateur._id,
                 nom: utilisateur.nom,
                 email: utilisateur.email,
+                role: utilisateur.role,
                 phone: utilisateur.phone,
                 createdAt: utilisateur.createdAt,
                 updatedAt: utilisateur.updatedAt
             },
-            token: token,
             expiresAt: new Date(decodedToken.exp * 1000), // Conversion en date
             issuedAt: new Date(decodedToken.iat * 1000)
         };

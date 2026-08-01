@@ -1,13 +1,18 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { getPayDataService } from "../services/paiement.service.js";
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export const verifierPaiementToken = (req, res, next) => {
+/**
+ * Middleware pour vérifier le token de paiement
+ * Utilise le service getPayDataService pour récupérer les données du paiement
+ */
+export const verifierPaiementToken = async (req, res, next) => {
     try {
-        // Récupérer le token du header Authorization
+        // 1. Récupérer le token du header Authorization
         const authHeader = req.headers.authorization;
         
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,28 +22,59 @@ export const verifierPaiementToken = (req, res, next) => {
             });
         }
 
-        const token = authHeader.split(' ')[1]; // Récupérer le token après "Bearer"
+        const token = authHeader.split(' ')[1];
 
-        // Vérifier et décoder le token
-        const decoded = jwt.verify(token, JWT_SECRET);
-        
-        // Ajouter les données du token à la requête
-        req.user = decoded;
-        
+        // 2. Appeler le service pour récupérer les données du paiement
+        let session;
+        try {
+            session = await getPayDataService(token);
+        } catch (error) {
+            // Gérer les erreurs du service
+            if (error.message === "Token invalide") {
+                return res.status(401).json({
+                    success: false,
+                    message: "Token invalide"
+                });
+            }
+            if (error.message === "Paiement expiré, veuillez payer de nouveau.") {
+                return res.status(401).json({
+                    success: false,
+                    message: "Token expiré, veuillez renouveler votre paiement"
+                });
+            }
+            if (error.message === "Paiement non trouvé") {
+                return res.status(404).json({
+                    success: false,
+                    message: "Paiement non trouvé"
+                });
+            }
+            // Ré-erreur pour les autres cas
+            throw error;
+        }
+
+        // 3. Ajouter les données du paiement à la requête
+        req.paiementSession = session;
+        req.paiementData = session.pay;
+        req.transactionId = session.pay.id;
+        req.paiementExpiresAt = session.expiresAt;
+        req.paiementIssuedAt = session.issuedAt;
+
+        // 4. Ajouter également le token décodé (pour compatibilité)
+        try {
+            req.user = jwt.verify(token, JWT_SECRET);
+        } catch (error) {
+            // Si le token est déjà vérifié par le service, on peut le décoder sans vérifier
+            req.user = jwt.decode(token);
+        }
+
         next();
+        
     } catch (error) {
         console.error("Erreur de vérification du token:", error);
         
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                success: false,
-                message: "Token expiré, veuillez renouveler votre paiement"
-            });
-        }
-        
-        return res.status(401).json({
+        return res.status(500).json({
             success: false,
-            message: "Token invalide"
+            message: "Erreur lors de la vérification du paiement"
         });
     }
 };

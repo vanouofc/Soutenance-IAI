@@ -24,6 +24,11 @@ const utilisateurSchema = new mongoose.Schema({
         type: String,
         required: [true, `Le numéro de téléphone est requis.`],
     },
+    role: {
+        type: String,
+        default: 'user',
+        trim: true
+    },
     isActive: {
         type: Boolean,
         default: true

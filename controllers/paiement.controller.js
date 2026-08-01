@@ -1,7 +1,7 @@
 import { confirmationEmail, sendEmail } from "../config/resend.js";
 import Paiement from "../models/paiement.model.js";
 import { generateToken } from "../services/generateToken.service.js";
-import { deletePaiementService, getPaiementsByFieldService, getPaiementService, getPaiementsService, paiementService } from "../services/paiement.service.js";
+import { addPaiementService, deletePaiementService, getPaiementsByFieldService, getPaiementService, getPaiementsService, getPayDataService, paiementService } from "../services/paiement.service.js";
 import { RandomGenerator } from "@hachther/mesomb";
 
 export const paiementFrais = async (req, res, next) => {
@@ -12,11 +12,23 @@ export const paiementFrais = async (req, res, next) => {
         message: "Les éléments n'ont pas été renseigner."
     });
   };
+
+  const filiereInfo = ["Génie logiciel", "Système et réseau", "Software engineering"];
+  function defMontant (filiere, niveau) {
+    if(niveau === 3 && filiereInfo.includes(filiere)) {
+      return 10;
+    } else if(niveau === 2 && filiereInfo.includes(filiere)) {
+      return 10;
+    }else return 10
+  };
+
+  const montant = defMontant(filiere, niveau);
+
   const nonce = RandomGenerator.nonce();
   const transacId = "IAI-" + Date.now();
 
   try {
-    const result = await paiementService({nom, email, filiere, niveau, classe, matricule, numero, operateur, nonce, transacId });
+    const result = await paiementService({nom, email, filiere, niveau, classe, matricule, numero, operateur, montant, nonce, transacId });
 
     if (!result.success) {
       return res.status(402).json({
@@ -26,16 +38,23 @@ export const paiementFrais = async (req, res, next) => {
     };
 
     const paiement = result.transaction;
+    
+    if(paiement.status === "PENDING") {
+      return res.status(200).json({
+        success: true,
+        message: "Paiement en attente.",
+        data: result,
+      });
+    };
 
-    const montant = paiement.amount;
-    const transactionId = paiement.finTrxId;
+    const montantR = paiement.amount;
 
-    const token = generateToken({nom, email, filiere, niveau, classe, matricule, montant, transactionId});
+    const token = generateToken({nom, email, filiere, niveau, classe, matricule, montantR, transacId});
 
     await sendEmail({
         to: email, 
         subject: 'Frais de soutenance IAI Cameroun',
-        html: confirmationEmail({nom, filiere, niveau, classe, matricule, montant, transactionId}),
+        html: confirmationEmail({nom, filiere, niveau, classe, matricule, montantR, transacId}),
     });
 
     return res.status(200).json({
@@ -44,6 +63,72 @@ export const paiementFrais = async (req, res, next) => {
       token: token,
       data: result,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addPaiement = async (req, res, next) => {
+  try {
+    const { nom, email, filiere, niveau, classe, matricule, numero } = req.body;
+    const addedBy = req.user?.nom;
+    console.log(addedBy);
+
+    if(!nom || !email || !niveau || !classe || !matricule || !numero) {
+    return res.status(400).json({
+        success: false,
+        message: "Les éléments n'ont pas été renseigner."
+    });
+  };
+  const montant = 10
+
+  const transactionId = 'Cash-' + Date.now();
+
+  const paiement = await addPaiementService({nom, email, montant, filiere, niveau, addedBy, classe, matricule, numero, transactionId});
+  
+  if(!paiement) {
+    return res.status(402).json({
+      success: false,
+      message: "Nous n'avons pas pu ajouter le paiement.",
+    });
+  };
+  
+  await sendEmail({
+    to: email,
+    subject: 'Frais de soutenance IAI Cameroun',
+    html: confirmationEmail({nom, filiere, niveau, classe, matricule, montant, transactionId}),
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Paiement reussi.",
+    data: paiement,
+  });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPayData = async (req, res, next) => {
+  try {
+    const payHeader = req.headers.authorization;
+            if (!payHeader || !payHeader.startsWith('Bearer ')) {
+               return res.status(401).json({
+                success: false,
+                message: 'Token de paiement manquant'
+               });
+            };
+    
+            const token = payHeader.split(' ')[1];
+            
+            // Récupérer le paiement
+            const session = await getPayDataService(token);
+            
+            res.status(200).json({
+                success: true,
+                session: session
+            });
   } catch (error) {
     next(error);
   }

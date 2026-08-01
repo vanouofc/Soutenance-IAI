@@ -2,6 +2,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { ErreurMetier } from "../error/erreurMetier.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,9 +29,11 @@ const fileFiltre = (req, file, cb) => {
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
 
-    if(!mimetype || !extname){
-        cb(new Error('Seules les images sont autorisées (jpeg, jpg, png, webp)'));
-    };
+    // IMPORTANT : le `return` est nécessaire pour ne PAS appeler cb() une
+    // seconde fois (sinon multer lève une erreur "Double callback").
+    if (!mimetype || !extname){
+        return cb(new ErreurMetier('Seules les images sont autorisées (jpeg, jpg, png, webp)', 400));
+    }
 
     return cb(null, true);
 };

@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { createUtilisateur, getSession, utilisateurSignIn, utilisateurSignout } from "../controllers/utilisateur.controller.js";
+import { requireAuth } from "../middlewares/auth.middleware.js";
 
 const utilisateurRouter = Router();
 
 utilisateurRouter.post('/', 
+    requireAuth,
     /* #swagger.tags = ['Utilisateurs'] */ 
     /* #swagger.summary = 'Créer un compte administrateur' */ 
     /* #swagger.description = 'Inscrit un nouvel utilisateur avec nom, email, mot de passe et téléphone.' */ 
