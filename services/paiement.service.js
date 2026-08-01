@@ -32,6 +32,8 @@ export const paiementService = async (transactionData) => {
             throw new ErreurMetier("Echec du paiement.", 400);
         };
 
+        const finTrxId = operation.transaction.finTrxId;
+
         const newPaiement = new Paiement({
             numero,
             email,
@@ -42,7 +44,7 @@ export const paiementService = async (transactionData) => {
             classe,
             matricule,
             operateur,
-            idTransaction: transacId,
+            idTransaction: finTrxId,
         });
         const paiement = await newPaiement.save();
 

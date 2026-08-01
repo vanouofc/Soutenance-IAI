@@ -1,7 +1,12 @@
 import { Resend } from "resend";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 if (!RESEND_API_KEY) {
@@ -14,12 +19,31 @@ if (!FROM) {
 
 const resend = new Resend(RESEND_API_KEY);
 
-export async function sendEmail({to, subject, html}) {
+// Échappe les caractères HTML pour empêcher toute injection XSS.
+export const escapeHtml = (value) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+// Logo embarqué en attachement "inline" : référencé via `cid:` dans le HTML,
+// il s'affiche directement dans l'email (sans dépendre d'un hébergement externe).
+const LOGO_ATTACHMENT = {
+  filename: "logo-iai.png",
+  path: path.join(__dirname, "assets/logo-iai.png"),
+  contentType: "image/png",
+  contentId: "logo-iai",
+};
+
+export async function sendEmail({to, subject, html, attachments = []}) {
   const { data, error } = await resend.emails.send({
     from: FROM,
     to,
     subject,
     html,
+    attachments: [LOGO_ATTACHMENT, ...attachments],
   });
 
   if (error) {
@@ -29,7 +53,18 @@ export async function sendEmail({to, subject, html}) {
   // console.log("Email envoyé : ", data);
 }
 
-export function confirmationEmail ({nom, classe, matricule, filiere, transacId, montant}) {
+export function confirmationEmail ({nom, classe, matricule, filiere, transaction, montant}) {
+  // Toutes les valeurs proviennent de l'utilisateur : on les échappe avant de
+  // les insérer dans le HTML pour empêcher toute injection XSS.
+  const d = {
+    nom: escapeHtml(nom),
+    classe: escapeHtml(classe),
+    matricule: escapeHtml(matricule),
+    filiere: escapeHtml(filiere),
+    transaction: escapeHtml(transaction),
+    montant: escapeHtml(montant),
+  };
+
   return `
     <!DOCTYPE html>
     <html lang="fr">
@@ -279,7 +314,7 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transacId, 
 
             <div class="header">
 
-                <img src="https://i.ibb.co/S7sxQ9jQ/iai.jpg"
+                <img src="cid:logo-iai"
                     class="logo"
                     alt="Institut Africain d'Informatique">
 
@@ -305,7 +340,7 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transacId, 
                 <h2>Paiement confirmé</h2>
 
                 <p>
-                    Bonjour <strong>${nom}</strong>,
+                    Bonjour <strong>${d.nom}</strong>,
                 </p>
 
                 <p>
@@ -317,32 +352,32 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transacId, 
 
                     <tr>
                         <td>Nom complet</td>
-                        <td>${nom}</td>
+                        <td>${d.nom}</td>
                     </tr>
 
                     <tr>
                         <td>Matricule</td>
-                        <td>${matricule}</td>
+                        <td>${d.matricule}</td>
                     </tr>
 
                     <tr>
                         <td>Classe</td>
-                        <td>${classe}</td>
+                        <td>${d.classe}</td>
                     </tr>
 
                     <tr>
                         <td>Filière</td>
-                        <td>${filiere}</td>
+                        <td>${d.filiere}</td>
                     </tr>
 
                     <tr>
                         <td>Numéro de transaction</td>
-                        <td>${transacId}</td>
+                        <td>${d.transaction}</td>
                     </tr>
 
                     <tr>
                         <td>Montant acquitté</td>
-                        <td class="amount">${montant} FCFA</td>
+                        <td class="amount">${d.montant} FCFA</td>
                     </tr>
 
                 </table>
@@ -427,6 +462,11 @@ export function confirmationEmail ({nom, classe, matricule, filiere, transacId, 
 };
 
 export function activationEmail ({email, nom}) {
+    const d = {
+        email: escapeHtml(email),
+        nom: escapeHtml(nom),
+    };
+
     return `
         <p>Bonjour <strong>Admin</strong>,</p>
 
@@ -439,10 +479,10 @@ export function activationEmail ({email, nom}) {
         </p>
 
         <p style="font-size:16px; font-weight:bold; color:#333;">
-            email : ${email}
+            email : ${d.email}
         </p>
         <p style="font-size:16px; font-weight:bold; color:#333;">
-            nom : ${nom}
+            nom : ${d.nom}
         </p>
 
         <p>

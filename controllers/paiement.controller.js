@@ -47,14 +47,15 @@ export const paiementFrais = async (req, res, next) => {
       });
     };
 
+    const IdTransaction = paiement.finTrxId;
     const montantR = paiement.amount;
 
-    const token = generateToken({nom, email, filiere, niveau, classe, matricule, montantR, transacId});
+    const token = generateToken({nom, email, filiere, niveau, classe, matricule, montantR, IdTransaction});
 
     await sendEmail({
         to: email, 
         subject: 'Frais de soutenance IAI Cameroun',
-        html: confirmationEmail({nom, filiere, niveau, classe, matricule, montantR, transacId}),
+        html: confirmationEmail({nom, filiere, niveau, classe, matricule, montant: montantR, transaction: IdTransaction}),
     });
 
     return res.status(200).json({
@@ -96,7 +97,7 @@ export const addPaiement = async (req, res, next) => {
   await sendEmail({
     to: email,
     subject: 'Frais de soutenance IAI Cameroun',
-    html: confirmationEmail({nom, filiere, niveau, classe, matricule, montant, transactionId}),
+    html: confirmationEmail({nom, filiere, niveau, classe, matricule, montantR: montant, IdTransaction: transactionId}),
   });
 
   return res.status(200).json({

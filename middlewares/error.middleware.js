@@ -45,14 +45,6 @@ export const errorMiddleware = (err, req, res, next) => {
         });
     }
 
-    // 3. Fallback texte, pour le code pas encore migré (à supprimer une fois tout migré)
-    if (err.message && (err.message.includes("Stock insuffisant") || err.message.includes("n'existe pas"))) {
-        return res.status(400).json({
-            success: false,
-            message: err.message
-        });
-    }
-
     // 4. Tout le reste = vraie erreur serveur inattendue
     return res.status(500).json({
         success: false,
