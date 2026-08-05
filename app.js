@@ -34,13 +34,13 @@ app.use(cors({
 }));
 
 app.use(arcjectMiddleware);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/api/v1/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const swaggerDocument = JSON.parse(readFileSync(new URL("./swagger-output.json", import.meta.url)));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-app.use('/photos', photoRouter);
-app.use('/buy-it', paiementRouter);
-app.use('/utilisateurs', utilisateurRouter);
+app.use('/api/v1/photos', photoRouter);
+app.use('/api/v1/buy-it', paiementRouter);
+app.use('/api/v1/utilisateurs', utilisateurRouter);
 app.get('/', (req, res) => {
     console.log(`http://127.0.0.1:${PORT}/`);
     res.send();
