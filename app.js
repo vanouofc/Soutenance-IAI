@@ -33,6 +33,9 @@ app.use(cors({
     credentials: true,
 }));
 
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
 app.use(arcjectMiddleware);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
